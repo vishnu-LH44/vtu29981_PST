@@ -1,0 +1,54 @@
+import java.util.*;
+
+public class MaximumProfitAnalyzer {
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        // Number of days
+        int n = sc.nextInt();
+
+        int[] prices = new int[n];
+
+        // Read stock prices
+        for (int i = 0; i < n; i++) {
+            prices[i] = sc.nextInt();
+        }
+
+        int minPrice = prices[0];
+        int maxProfit = 0;
+        int buyDay = 0;
+        int sellDay = 0;
+
+        // Find maximum profit
+        for (int i = 1; i < n; i++) {
+
+            // Update minimum buying price
+            if (prices[i] < minPrice) {
+                minPrice = prices[i];
+                buyDay = i;
+            }
+
+            // Calculate current profit
+            int currentProfit = prices[i] - minPrice;
+
+            // Update maximum profit
+            if (currentProfit > maxProfit) {
+                maxProfit = currentProfit;
+                sellDay = i;
+            }
+        }
+
+        System.out.println("Maximum Profit: " + maxProfit);
+
+        if (maxProfit > 0) {
+            System.out.println("Buy Price: " + prices[buyDay]);
+            System.out.println("Sell Price: " + prices[sellDay]);
+        } else {
+            System.out.println("No Profit Possible");
+        }
+
+        sc.close();
+    }
+}
