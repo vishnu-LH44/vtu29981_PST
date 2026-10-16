@@ -1,0 +1,192 @@
+
+import java.util.*;
+
+abstract class Tree {
+    int value, color, depth;
+
+    Tree(int value, int color, int depth) {
+        this.value = value;
+        this.color = color;
+        this.depth = depth;
+    }
+
+    abstract void accept(TreeVis visitor);
+}
+
+class TreeNode extends Tree {
+    List<Tree> children = new ArrayList<>();
+
+    TreeNode(int value, int color, int depth) {
+        super(value, color, depth);
+    }
+
+    void addChild(Tree child) {
+        children.add(child);
+    }
+
+    void accept(TreeVis visitor) {
+        Stack<Tree> stack = new Stack<>();
+        stack.push(this);
+
+        while (!stack.empty()) {
+            Tree current = stack.pop();
+
+            if (current instanceof TreeLeaf) {
+                visitor.visitLeaf((TreeLeaf) current);
+            } else {
+                TreeNode node = (TreeNode) current;
+                visitor.visitNode(node);
+
+                for (int i = node.children.size() - 1; i >= 0; i--) {
+                    stack.push(node.children.get(i));
+                }
+            }
+        }
+    }
+}
+
+class TreeLeaf extends Tree {
+    TreeLeaf(int value, int color, int depth) {
+        super(value, color, depth);
+    }
+
+    void accept(TreeVis visitor) {
+        visitor.visitLeaf(this);
+    }
+}
+
+abstract class TreeVis {
+    abstract int getResult();
+    abstract void visitNode(TreeNode node);
+    abstract void visitLeaf(TreeLeaf leaf);
+}
+
+class SumInLeavesVisitor extends TreeVis {
+    int sum = 0;
+
+    public int getResult() {
+        return sum;
+    }
+
+    public void visitNode(TreeNode node) {}
+
+    public void visitLeaf(TreeLeaf leaf) {
+        sum += leaf.value;
+    }
+}
+
+class ProductOfRedNodesVisitor extends TreeVis {
+    long product = 1;
+    static final long MOD = 1000000007L;
+
+    public int getResult() {
+        return (int) product;
+    }
+
+    public void visitNode(TreeNode node) {
+        if (node.color == 0)
+            product = product * node.value % MOD;
+    }
+
+    public void visitLeaf(TreeLeaf leaf) {
+        if (leaf.color == 0)
+            product = product * leaf.value % MOD;
+    }
+}
+
+class FancyVisitor extends TreeVis {
+    int evenDepthSum = 0;
+    int greenLeafSum = 0;
+
+    public int getResult() {
+        return Math.abs(evenDepthSum - greenLeafSum);
+    }
+
+    public void visitNode(TreeNode node) {
+        if (node.depth % 2 == 0)
+            evenDepthSum += node.value;
+    }
+
+    public void visitLeaf(TreeLeaf leaf) {
+        if (leaf.color == 1)
+            greenLeafSum += leaf.value;
+    }
+}
+
+public class Solution {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+
+        int[] values = new int[n];
+        int[] colors = new int[n];
+
+        for (int i = 0; i < n; i++)
+            values[i] = sc.nextInt();
+
+        for (int i = 0; i < n; i++)
+            colors[i] = sc.nextInt();
+
+        List<Integer>[] adj = new ArrayList[n];
+
+        for (int i = 0; i < n; i++)
+            adj[i] = new ArrayList<>();
+
+        for (int i = 0; i < n - 1; i++) {
+            int u = sc.nextInt() - 1;
+            int v = sc.nextInt() - 1;
+            adj[u].add(v);
+            adj[v].add(u);
+        }
+
+        int[] parent = new int[n];
+        int[] depth = new int[n];
+        int[] childCount = new int[n];
+
+        Arrays.fill(parent, -2);
+        parent[0] = -1;
+
+        Queue<Integer> queue = new LinkedList<>();
+        queue.add(0);
+
+        while (!queue.isEmpty()) {
+            int u = queue.poll();
+
+            for (int v : adj[u]) {
+                if (parent[v] == -2) {
+                    parent[v] = u;
+                    depth[v] = depth[u] + 1;
+                    childCount[u]++;
+                    queue.add(v);
+                }
+            }
+        }
+
+        Tree[] nodes = new Tree[n];
+
+        for (int i = 0; i < n; i++) {
+            if (childCount[i] == 0)
+                nodes[i] = new TreeLeaf(values[i], colors[i], depth[i]);
+            else
+                nodes[i] = new TreeNode(values[i], colors[i], depth[i]);
+        }
+
+        for (int i = 1; i < n; i++) {
+            ((TreeNode) nodes[parent[i]]).addChild(nodes[i]);
+        }
+
+        TreeVis vis1 = new SumInLeavesVisitor();
+        TreeVis vis2 = new ProductOfRedNodesVisitor();
+        TreeVis vis3 = new FancyVisitor();
+
+        nodes[0].accept(vis1);
+        nodes[0].accept(vis2);
+        nodes[0].accept(vis3);
+
+        System.out.println(vis1.getResult());
+        System.out.println(vis2.getResult());
+        System.out.println(vis3.getResult());
+
+        sc.close();
+    }
+}
